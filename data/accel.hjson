@@ -1,0 +1,67 @@
+// Register description for YOUR accelerator, in the HJSON format OpenTitan's
+// reggen (regtool) reads and every X-HEEP peripheral uses.
+//
+// `make regs` feeds this file to the regtool that ships inside the vendored
+// register_interface IP and produces, from the `name:` field below:
+//   rtl/<name>_reg_pkg.sv   reg2hw / hw2reg struct definitions
+//   rtl/<name>_reg_top.sv   the reg_req/reg_rsp -> registers block
+//   sw/<name>_regs.h        C #defines for the driver (Lab 3)
+//
+// Keep `name` equal to ACCEL in the Makefile and to your top module name.
+//
+// Offsets are assigned in declaration order, word aligned: the first
+// register is at 0x00, the second at 0x04, and so on.
+//
+// DESIGN RULE, not a suggestion: these registers are control, status and
+// configuration ONLY. Payload data does not pass through CSRs -- it moves
+// over the data port (OBI), which is the whole point of splitting the two
+// interfaces. A register file that streams data is the mistake this lab is
+// built to stop you making.
+//
+// What almost every accelerator ends up needing:
+//   CTRL    wo,  hwqe:"true"   START bit -- the write pulse launches a run
+//   STATUS  ro,  hwext:"true"  DONE / BUSY, driven straight from the FSM
+//   N       rw                 how many elements to process
+//   SRC     rw                 base address to read from
+//   DST     rw                 base address to write to
+//   ...     rw                 whatever your kernel is parameterised by
+//
+// Two flags worth understanding before you copy them:
+//   hwqe  exposes reg2hw.<reg>.qe, a one-cycle pulse on a software write.
+//         That pulse, not the stored value, is what starts a run.
+//   hwext the register has no storage of its own -- reads come straight
+//         from the hardware in the same cycle. Without it reggen puts a
+//         flop in the read path, and software that writes START and
+//         immediately reads STATUS gets the value from *before* the write:
+//         it sees the previous run's DONE and concludes the new run has
+//         already finished.
+//
+// Full field syntax: vendor/pulp_platform/register_interface/vendor/
+// lowrisc_opentitan/doc/ (after `make vendor`), and any X-HEEP peripheral
+// for a worked example.
+
+{ name: "my_accel"
+  clock_primary: "clk_i"
+  reset_primary: "rst_ni"
+  bus_interfaces: [
+    { protocol: "reg_iface", direction: "device" }
+  ]
+  regwidth: 32
+  registers: [
+
+    // TODO(you): your register map. One example to start from, then delete
+    // or keep as you see fit.
+    { name:     "CTRL"
+      desc:     "Control register. Write START=1 to launch a run."
+      swaccess: "wo"
+      hwaccess: "hro"
+      hwqe:     "true"
+      fields: [
+        { bits: "0", name: "START"
+          desc: "Write 1 to start processing. Ignored while BUSY."
+        }
+      ]
+    }
+
+  ]
+}
