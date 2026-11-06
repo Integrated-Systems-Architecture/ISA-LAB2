@@ -60,8 +60,8 @@ whatever the clock, and nothing said so. Carry over by hand what you set in
 yours — your top module and the clock period you implemented:
 
 ```make
-ACCEL     ?= <your top module>
-CLK_PERIOD    ?= <your Lab 1 period>
+ACCEL      ?= <your top module>
+CLK_PERIOD ?= <your Lab 1 period>
 ```
 
 Then check that nothing else of yours is missing:

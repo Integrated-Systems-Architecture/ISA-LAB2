@@ -80,8 +80,8 @@ Fill in REPORT.md §2 before you go on.
 
 You are about to run the flow many times, on many versions of the design. An
 **exploration** is one change, measured with the flow (rule 2 below), against
-the version it started from — its **parent**. Each one lives on its own branch and
-ends with its own tag, `expNN`, which REPORT.md names.
+the version it started from — its **parent**. Each one lives on its own
+branch and ends with its own tag, `expNN`, which REPORT.md names.
 
 ### 2.1 Four rules
 
@@ -278,11 +278,12 @@ is unfolding (§4.2) first, then pipelining.
 ### 3.3 Find the right number of stages
 
 Sweep `NStages` (1, 2, 3, ...; the parent is the point with none) at
-synthesis and record, for each, the f_max and the area. Each stage adds a row of flip-flops and a cycle of
-latency; at some point the critical path stops being in the logic — it moves
-to the OBI handshake, the FSM, or a loop — and further stages only add area.
-Take the number at that knee through the whole flow: that is the exploration,
-and the sweep is the argument for it, in its text in REPORT.md §3.
+synthesis and record, for each, the f_max and the area. Each stage adds a
+row of flip-flops and a cycle of latency; at some point the critical path
+stops being in the logic — it moves to the OBI handshake, the FSM, or a
+loop — and further stages only add area. Take the number at that knee
+through the whole flow: that is the exploration, and the sweep is the
+argument for it, in its text in REPORT.md §3.
 
 ### 3.4 Gate level
 
