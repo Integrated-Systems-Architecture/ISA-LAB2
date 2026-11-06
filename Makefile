@@ -1,4 +1,4 @@
-# Lab 1 -- standalone accelerator: vendor, generate, simulate, synthesise,
+# Lab 2 -- standalone accelerator: vendor, generate, simulate, synthesise,
 # place and route, measure power.
 #
 # Run every target from this directory. Each one is a thin wrapper: the raw
@@ -98,7 +98,7 @@ VERILATOR_ENV := $(if $(CONDA_PREFIX),CPLUS_INCLUDE_PATH=$(CONDA_PREFIX)/include
 
 .PHONY: help
 help:
-	@echo "Lab 1 -- standalone accelerator ($(ACCEL))"
+	@echo "Lab 2 -- standalone accelerator ($(ACCEL))"
 	@echo ""
 	@echo "  make vendor        fetch the pulp IPs into vendor/ (util/vendor.py)"
 	@echo "  make regs          generate the CSR block from $(REGS_HJSON) (reggen)"

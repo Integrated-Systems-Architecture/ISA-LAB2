@@ -68,7 +68,7 @@ filesets:
 
   tech-sg13g2:
     files:
-      - implementation/tech/sg13g2/tc_clk_gating_sg13g2.sv  # -> sg13g2_lgcp_1
+      - implementation/tech/sg13g2/tc_clk_gating_sg13g2.sv  # -> sg13g2_slgcp_1
     file_type: systemVerilogSource
 
   # The memory wrapper, same pattern as the clock gate: one module name

@@ -136,21 +136,9 @@ third more area and half again as many flip-flops to get there. That is the
 general picture: `-retime` is cheap to try, `set_optimize_registers` usually
 finds the better answer. Try both on your design.
 
-This is the **easiest and safest way to pipeline**:
-
-1. in the RTL, put the extra registers all at the **output** of the
-   combinational block (or all at its **input**) — no thinking about where
-   the cuts go;
-2. let retiming spread them through the logic.
-
-The RTL you wrote is trivially correct: it is the old function, delayed by
-`S − 1` cycles, and retiming preserves exactly that. You cannot put a cut in
-the wrong place, forget to delay a side signal, or break a carry chain in the
-middle, because you never cut anything. Your testbench, if it does not
-hard-code the latency, passes unchanged.
-
-Placing the registers by hand is a legitimate comparison, and an instructive
-one: do it, keep both, and report who won and by how much.
+That is pipelining by retiming: the extra registers all at the output of the
+block in the RTL, and the tool decides where the cuts go. Why it is the safe
+way to pipeline, the RTL, and the comparison by hand are in TUTORIAL.md §3.
 
 ### 1.4 What retiming cannot do
 
@@ -164,7 +152,9 @@ delay divided by its register count is a period no retiming will beat.
 set_optimize_registers true -designs [current_design] -print_critical_loop
 ```
 
-The CORDIC of `lab1-example/` is exactly this case. Its rotator is iterative:
+The CORDIC of
+[ISA-LAB1-EXAMPLE](https://github.com/Integrated-Systems-Architecture/ISA-LAB1-EXAMPLE)
+is exactly this case. Its rotator is iterative:
 one micro-rotation per cycle, the result fed back into the same adders. At
 4.0 ns:
 
@@ -211,7 +201,7 @@ handshake registers are part of your interface; there is no reason for them to
 move. Exclude them, or retime only the datapath design:
 
 ```tcl
-# i_regs is the reggen block's instance name in lab1-example; use yours.
+# i_regs is the reggen block's instance name in ISA-LAB1-EXAMPLE; use yours.
 # set_dont_retime takes registers, the hierarchical cells around them, or designs.
 set_dont_retime [get_cells i_regs] true
 set_optimize_registers true -designs [current_design]
@@ -365,10 +355,10 @@ Error: Can't find object 'dw_foundation.sldb/DW01_add/cla'. (UID-109)
 ### 2.6 Knob 3: `set_implementation` — plain `compile` only
 
 Names one implementation for one operator cell. The operator cells exist
-after `elaborate`, named after the operator and the source line (`add_26`,
-`mult_26`, sometimes with a suffix — list them with
-`get_object_name [get_cells *]`, or `-hierarchical`). The implementation needs
-its module:
+after `elaborate`, named after the operator and the source line, sometimes
+with a suffix: `add_26` and `mult_26` in the multiply-add, `add_3_S4` in the
+lone 32-bit adder below. List them with `get_object_name [get_cells *]`, or
+`-hierarchical`. The implementation needs its module:
 
 ```tcl
 set_implementation DW01_add/rpl add_3_S4
@@ -399,23 +389,8 @@ tree of full and half adders to reduce them — is, to Design Compiler, just
 logic. It no longer recognises a multiplier, so nothing earlier in this section
 applies to it: `report_resources` shows only the final `+`, if you left one.
 Whether that loses or wins against `dw_foundation` is a measurement, not a
-belief. On a registered 16 × 16 unsigned multiplier, with the final carry
-propagate adder left to the tool as a `+`:
-
-| multiplier | at 10 ns: area (µm²) | at a 4.0 ns constraint: path (ns) | area (µm²) |
-|---|---|---|---|
-| `a * b`, tool's choice (`benc_radix4`) | 16 872 | 4.78 | 22 185 |
-| `a * b`, `-mult_arch and` | 16 271 | 4.70 | 23 049 |
-| hand-written **Dadda** tree (195 FA, 15 HA) | 17 155 | **4.51** | 27 905 |
-| hand-written **Wallace** tree (196 FA, 78 HA) | 18 574 | 4.95 | 31 899 |
-
-None of them closes 4.0 ns; the path column is how close each one got with the
-tool trying as hard as it can. At a relaxed clock DesignWare is the smallest,
-as you would expect. Pushed for speed, the hand-written Dadda tree got **4 %
-further than the best DesignWare multiplier — for a fifth more area** — and
-Wallace, with five times as many half adders as Dadda, lost on both counts.
-Your width, signedness and constraint will move these numbers; building the
-tree and measuring it is a proposed exploration, TUTORIAL.md §4.6.
+belief: building the tree and measuring it is one of the possible
+explorations, TUTORIAL.md §4.6.
 
 The other place where RTL arithmetic pays is where the tool *cannot* see the
 opportunity at all: multiplying by a constant you know, sharing one operator

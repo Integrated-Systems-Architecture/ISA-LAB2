@@ -41,17 +41,37 @@ cd isa-lab2
 This template carries the same `Makefile`, the same `accel.core` skeleton and
 the same `implementation/` scripts that Lab 1's did. Replace the skeleton with
 the files you delivered, straight from the `lab1-delivery` tag of your Lab 1
-repository:
+repository — all of them except the `Makefile`:
 
 ```bash
 git fetch <your-lab1-group-repo-url> lab1-delivery
-git checkout FETCH_HEAD -- rtl tb model data accel.core Makefile
+git checkout FETCH_HEAD -- rtl tb model data accel.core
 ```
 
 `git fetch` with a tag name downloads that one commit and leaves it in
 `FETCH_HEAD`, without adding a remote or copying Lab 1's tags into this
 repository; `git checkout FETCH_HEAD -- <paths>` copies those paths from it
 into your working tree and stages them.
+
+**Keep this template's `Makefile`.** It is Lab 1's latest version, and the
+one in your Lab 1 repository may be older: before 5 October, for instance,
+`PWR_CLK_PS` was fixed at 10 000 ps, so every power run simulated at 10 ns
+whatever the clock, and nothing said so. Carry over by hand what you set in
+yours — your top module and the clock period you implemented:
+
+```make
+ACCEL     ?= <your top module>
+CLK_PERIOD    ?= <your Lab 1 period>
+```
+
+Then check that nothing else of yours is missing:
+
+```bash
+git diff FETCH_HEAD -- Makefile
+```
+
+A `-` line is in your Lab 1 `Makefile` and not here: carry it over only if
+you wrote it. A `+` line is the template's: keep it.
 
 Then tidy up:
 
@@ -66,8 +86,9 @@ Then tidy up:
   fix instead (`git fetch <url> main`), and say so in REPORT.md §1.
 
 The core name stays `isa:lab1:<accel>`. It is just a name; keeping it means
-the `Makefile` and `accel.core` you import agree with each other and with the
-power scripts without a single edit.
+the `accel.core` you import agrees with this `Makefile`
+(`CORE ?= isa:lab1:$(ACCEL)`) and with the power scripts without a single
+edit.
 
 ---
 
@@ -79,7 +100,8 @@ clock period you implemented in Lab 1:
 ```bash
 make vendor && make regs
 make sim && make questa                      # TEST PASSED, twice
-make synth CLK_PERIOD=<your Lab 1 period>
+make synth                                   # CLK_PERIOD from the Makefile: your Lab 1 period
+make power-sim                               # the gate-level netlist passes too
 make pnr-all
 make power-postlayout
 ```
@@ -103,9 +125,11 @@ what the final design is compared against (TUTORIAL.md §2.3).
 
 ## 4. Know the scripts you are going to edit
 
-In Lab 1 none of the tool scripts needed editing. In Lab 2 you edit one:
-`implementation/design_compiler/scripts/dc_script.tcl`. Read it top to bottom
-before you touch it, and keep in mind how it runs:
+In Lab 1 none of the tool scripts needed editing. In Lab 2 you may edit
+`implementation/design_compiler/scripts/dc_script.tcl` and the
+place-and-route scripts in `implementation/innovus/scripts/` (TUTORIAL.md
+§4.8 lists their knobs). Read `dc_script.tcl` top to bottom before you touch
+it, and keep in mind how it runs:
 
 - `make synth` runs it through FuseSoC, in
   `build/isa_lab1_<accel>_0.1.0/synth-design_compiler/` — **not** in
@@ -115,6 +139,12 @@ before you touch it, and keep in mind how it runs:
   variables: `make synth CLK_PERIOD=3.0 FOO=1` makes `$::env(FOO)` exist in
   dc_shell. `set_constraints.tcl` reads `CLK_PERIOD` exactly that way; copy
   the pattern if you want a switch instead of an edit.
+- **A default in the `Makefile` reaches the script only if exported.** For a
+  switch of your own, write `export FOO ?= 0`, not `FOO ?= 0`: without
+  `export`, `make synth` runs with `FOO` unset, nothing warns you, and the
+  tag — which has only the default — no longer reproduces the run.
+  `CLK_PERIOD` needs no `export` because the `synth` target passes it
+  explicitly, as `PNR_UTIL` and `PNR_ASPECT` are passed to Innovus.
 - The script is also runnable by hand in `dc_shell` from
   `implementation/design_compiler/`. Try a new command there first, one line
   at a time, before you put it in the script.

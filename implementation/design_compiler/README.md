@@ -366,9 +366,9 @@ Run both at the same clock constraint and compare area and slack. The
 difference is the answer to "how much does effort buy?", and it is not always
 large.
 
-In this technology `-gate_clock` uses `sg13g2_lgcp_1`, the library's
-integrated clock gating cell: a posedge latch and an AND, characterised as
-one cell. That is the only kind of clock gate worth having — see §5b.
+In this technology `-gate_clock` uses `sg13g2_slgcp_1`, the library's
+integrated clock gating cell with a scan enable: a posedge latch and an AND,
+characterised as one cell. That is the only kind of clock gate worth having — see §5b.
 
 Note that your accelerator also instantiates a clock gate explicitly
 (`tc_clk_gating` around the datapath — requirement 4 of the assignment). That
@@ -390,15 +390,19 @@ wrong moment, and a timing model nobody can sign off.
 
 So the synthesis flow compiles a *different* file with the *same* module name
 and ports, `implementation/tech/sg13g2/tc_clk_gating_sg13g2.sv`, which
-instantiates `sg13g2_lgcp_1` directly:
+instantiates `sg13g2_slgcp_1` directly:
 
 ```systemverilog
-sg13g2_lgcp_1 i_icg (
+sg13g2_slgcp_1 i_icg (
     .CLK (clk_i),
-    .GATE(en_i | test_en_i),
+    .GATE(en_i),
+    .SCE (test_en_i),
     .GCLK(clk_o)
 );
 ```
+
+The comment in that file says why it is the cell with the scan-enable pin
+`SCE`, not `sg13g2_lgcp_1` with the test enable ORed into `GATE`.
 
 The design never knows which one it got. The choice is made in
 `accel.core`, by two filesets:
@@ -425,7 +429,7 @@ consequences of getting it wrong are much larger than one gate.
 
 `compile_ultra -gate_clock` gates *registers*. It looks at every enable-driven
 flip-flop bank in the design, decides which ones are worth it, and drops an
-`sg13g2_lgcp_1` in front of each. You will see a few dozen of them in
+`sg13g2_slgcp_1` in front of each. You will see a few dozen of them in
 `report_power`, and the dynamic power will go down. That is real, and it is
 the right default to leave on.
 

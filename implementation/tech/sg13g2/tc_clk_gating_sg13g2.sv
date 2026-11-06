@@ -7,8 +7,8 @@
 //
 //    simulation  -> vendor/pulp_platform/tech_cells_generic/src/rtl/tc_clk.sv
 //                   an always_latch plus an AND, readable and portable
-//    synthesis   -> this file, sg13g2_lgcp_1, the library's integrated
-//                   clock gating cell
+//    synthesis   -> this file, sg13g2_slgcp_1, the library's integrated
+//                   clock gating cell with a scan enable
 //
 //  The choice is made in accel.core: the `tech-generic` fileset for
 //  the simulation targets, `tech-sg13g2` for the synthesis one. That is the

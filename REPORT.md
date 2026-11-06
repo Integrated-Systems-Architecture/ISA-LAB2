@@ -24,13 +24,16 @@ the flow again **here**, before any change. Commit tagged `lab2-baseline`.
 |---|---|---|---|---|
 | Implemented clock period | ____ ns | ____ ns | — | — |
 | Worst slack at that period | ____ ns | ____ ns | slow_1p08V_125C | `qor.rpt` |
-| f_max | ____ MHz | ____ MHz | slow_1p08V_125C | `qor.rpt` |
+| f_max | ____ MHz | ____ MHz | slow_1p08V_125C | 1 / (period − WNS), `qor.rpt` |
 | Area, post-synthesis | ____ µm² | ____ µm² | slow_1p08V_125C | `area.rpt` |
 | Area, post-layout | ____ µm² | ____ µm² | — | `08_export.area.rpt` |
-| Cells / flip-flops | ____ / ____ | ____ / ____ | — | `qor.rpt` |
+| Cells / flip-flops, post-synthesis | ____ / ____ | ____ / ____ | — | `qor.rpt` |
 | Power, post-layout | ____ mW | ____ mW | typ_1p20V_25C | `<accel>_pnr_power.rpt` |
 | Cycles per item | ____ | ____ | — | simulation |
 | Energy per item | ____ pJ | ____ pJ | typ_1p20V_25C | computed |
+
+Testbench on the reproduced baseline: `make sim` ____, `make questa` ____,
+`make power-sim` ____, `make power-postlayout` ____.
 
 If any number differs from Lab 1, say which and why (a bug you fixed after the
 delivery, a different period, a different tool run). From here on, the
@@ -93,8 +96,11 @@ makes them better, if it is measured and explained. You need at least:
 
 Each exploration starts from a **parent** — `lab2-baseline` or an earlier
 exploration — and is compared against it. Each has its own git tag, `expNN`,
-numbered in the order you make them (TUTORIAL.md §2). Each goes through the
-whole flow, up to post-layout power, at the clock period you choose for it.
+numbered in the order you make them (TUTORIAL.md §2), pushed: **an
+exploration without a pushed tag does not count.** Each runs at the clock
+period you choose for it. The ones you keep go through the whole flow, up to
+post-layout power; one you leave out may stop after synthesis and
+`make power-sim`, unless it changes place and route (TUTORIAL.md §2.1).
 
 Copy the block below once per exploration.
 
@@ -106,6 +112,7 @@ Copy the block below once per exploration.
 | Parent | `lab2-baseline` / `expMM` |
 | Kind | architectural (RTL retiming/pipelining · folding · unfolding · RTL arithmetic · Wallace/Dadda) / tool (synthesis script · place and route) |
 | Kept in the final design | yes / no / partly |
+| Flow | whole, up to post-layout power / synthesis only |
 
 **What changed, and why.** In words. If the RTL changed, the modified block
 diagram: `figures/expNN_____`. If a script changed: which file, and the
@@ -126,11 +133,15 @@ you got. If it is worse, why.
 | DRC violations | ____ | ____ | — | `08_export.drc.rpt` |
 | Core size / achieved density | ____ × ____ µm / ____ % | ____ × ____ µm / ____ % | — | — |
 | Area, post-layout | ____ µm² | ____ µm² | ____ | `08_export.area.rpt` |
-| Cells / flip-flops | ____ / ____ | ____ / ____ | ____ | `08_export.gate_count.rpt` / `qor.rpt` |
+| Cells / flip-flops, post-synthesis | ____ / ____ | ____ / ____ | ____ | `qor.rpt` |
 | Cycles per item | ____ | ____ | ____ | simulation |
 | Throughput | ____ items/s | ____ items/s | ____ | at the clock period above |
 | Power, post-layout, simulated at ____ / ____ ns | ____ mW | ____ mW | ____ | `<accel>_pnr_power.rpt` |
 | Energy per item | ____ pJ | ____ pJ | ____ | at the simulation clock |
+
+Synthesis only: write — in the place-and-route rows, and give area and power
+post-synthesis instead (`area.rpt`, `make power` → `<accel>_power.rpt`),
+marked as such.
 
 Testbench: `make sim` ____, `make questa` ____, `make power-sim` ____,
 `make power-postlayout` ____. If you changed the testbench or the model: what,
@@ -139,24 +150,9 @@ and why that does not weaken the check.
 > ____
 
 **Evidence from the tool**, if it helps the explanation: what retiming moved
-and the critical loop it printed (`-print_critical_loop`, the `clk_r_REG*`
+and the critical loop it printed (`-print_critical_loop`, the `MY_CLK_r_REG*`
 cells), what `report_resources` says was built, the critical path before and
 after, the congestion map.
-
-> ____
-
-*Wallace or Dadda only, optional:* the multiplier alone, registered, slow
-corner, against DesignWare (TUTORIAL.md §4.6). Operand width ____ bits,
-signed / unsigned ____.
-
-| multiplier | FA / HA | area at ____ ns (µm²) | path at a ____ ns constraint (ns) | area there (µm²) |
-|---|---|---|---|---|
-| `*`, tool's choice (`mult_arch: ____`) | — | ____ | ____ | ____ |
-| `*`, `-mult_arch ____` | — | ____ | ____ | ____ |
-| your Wallace tree | ____ / ____ | ____ | ____ | ____ |
-| your Dadda tree | ____ / ____ | ____ | ____ | ____ |
-
-How you checked the tree (exhaustive, random, corners):
 
 > ____
 
@@ -188,7 +184,7 @@ from Lab 1: `figures/final_____`.
 | DRC violations | ____ | ____ | — | `08_export.drc.rpt` |
 | Core size / achieved density | ____ × ____ µm / ____ % | ____ × ____ µm / ____ % | — | — |
 | Area, post-layout | ____ µm² | ____ µm² | ____ | `08_export.area.rpt` |
-| Cells / flip-flops | ____ / ____ | ____ / ____ | ____ | `08_export.gate_count.rpt` / `qor.rpt` |
+| Cells / flip-flops, post-synthesis | ____ / ____ | ____ / ____ | ____ | `qor.rpt` |
 | Cycles per item | ____ | ____ | ____ | simulation |
 | Throughput | ____ items/s | ____ items/s | ____ | at the clock period above |
 | Power, post-layout, simulated at ____ / ____ ns | ____ mW | ____ mW | ____ | `<accel>_pnr_power.rpt` |

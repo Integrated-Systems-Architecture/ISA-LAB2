@@ -2,7 +2,7 @@
 
 Take the accelerator you built in Lab 1 and explore how to make it better at
 **one thing you choose**: change its architecture, change how the tools build
-it, measure every attempt through the whole flow, then keep what works. Hand
+it, measure every attempt with the tools, then keep what works. Hand
 in [REPORT.md](REPORT.md), filled in, a tag per exploration, and a release.
 
 This file says **what to do and in what order**. [TUTORIAL.md](TUTORIAL.md)
@@ -68,7 +68,9 @@ design is compared against.
 ## Step 1 — Choose the objective, read the reports
 
 Pick **one** figure of merit: throughput, area, energy per item, or throughput
-per area. Write it in **Section 2.1** before you change anything.
+per area. Write it in **Section 2.1** before you change anything. Everything
+— each exploration, the final design, the discussion — is judged against it;
+if you change it halfway, the report says when and why.
 
 Then find out what limits it — the critical path, the cycles per item, the OBI
 bandwidth, the biggest block in `area.rpt`. TUTORIAL.md §1 walks you through
@@ -98,22 +100,25 @@ For each exploration:
 1. **Start from its parent** — `lab2-baseline` or an earlier exploration — on
    a branch of its own (TUTORIAL.md §2).
 2. **Make one change**, in the RTL or in the scripts.
-3. **Run the whole flow** at the clock period you choose for it:
+3. **Run the flow** at the clock period you choose for it:
 
    ```bash
    make sim && make questa
    make synth CLK_PERIOD=<p>
    make power-sim              # the gate-level netlist still passes
-   make pnr-all
-   make power-postlayout
+   make pnr-all                # from here on: for an exploration you keep,
+   make power-postlayout       # or one that changes place and route
    ```
 
+   An exploration you leave out may stop after `make power-sim`; its block
+   in REPORT.md says so. If you decide to keep it later, run the rest then.
    At a short period `make power-postlayout` may fail on a correct netlist,
    because the testbench drives inputs before the clock tree delivers the
    edge. TUTORIAL.md §5.1 explains it and gives the fix: simulate at a
    relaxed clock with `PWR_CLK_PS`, and say so in the report.
 4. **Commit, tag it `expNN`** (`exp01`, `exp02`, ..., in the order you make
-   them) and push the tag.
+   them) and push the tag. The tags are how we see what you tried: **an
+   exploration without a pushed tag does not count.**
 5. **Fill in its block in Section 3**: the parent, what changed and why, the
    block diagram if the RTL changed, what happened, the table against the
    parent.

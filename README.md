@@ -17,6 +17,16 @@ count, at stated corners. Lab 2 produces the same numbers for every
 exploration you try, and ends with a final design — the explorations worth
 keeping, combined — and an argument for every difference from the baseline.
 
+## Your objective
+
+> **Choose one figure of merit before you change anything** — throughput,
+> area, energy per item, or throughput per area — justify it from what Lab 0
+> and Lab 1 measured, and declare it in REPORT.md §2.1.
+>
+> **Everything is judged against it**: each exploration, the final design and
+> the discussion. You may change it halfway, but the report has to say when
+> and why.
+
 ## Start here
 
 1. **[SETUP.md](SETUP.md)** — import your Lab 1 design from its
@@ -37,7 +47,8 @@ keeping, combined — and an argument for every difference from the baseline.
 
 **You start from your own design.** The template carries Lab 1's build system
 and scripts, unchanged; SETUP.md copies your RTL, testbench, model, register
-map, `accel.core` and `Makefile` in from `lab1-delivery`.
+map and `accel.core` in from `lab1-delivery`. The `Makefile` stays this one,
+with your `ACCEL` and clock period carried over by hand.
 
 **You edit the tool scripts.** In Lab 1 no tool script needed editing. In
 Lab 2 you may change `implementation/design_compiler/scripts/dc_script.tcl`
@@ -45,12 +56,7 @@ and the place-and-route scripts in `implementation/innovus/scripts/`:
 OPTIMIZATION.md and TUTORIAL.md §4.7–§4.8 give you the commands and the knobs,
 and how you put them together is yours to decide and to explain.
 
-**You choose the objective.** Throughput, area, energy per item, or throughput
-per area: one, declared before you start, and justified from what Lab 0 and
-Lab 1 measured.
-
 **You explore.** As many explorations as you want, each one change, each
-tagged `expNN`, each through the whole flow up to post-layout power, each
 compared against the version it started from. One that makes things worse
 counts, if it is explained. At least:
 
@@ -59,21 +65,24 @@ counts, if it is explained. At least:
 | one architectural exploration | retiming or pipelining in the RTL, folding, unfolding, arithmetic in the RTL (your own Wallace or Dadda multiplier included) |
 | one tool exploration | the synthesis script (retiming, operator architectures) or the place-and-route scripts |
 
-At the end you choose what to keep — one exploration or several combined —
-and compare that final design with the baseline.
+The explorations you keep go through the whole flow, up to post-layout power;
+one you leave out may stop after synthesis, unless it changes place and route
+(TUTORIAL.md §2.1). At the end you choose what to keep — one exploration or
+several combined — and compare that final design with the baseline.
 
-Proposed exploration, if your kernel multiplies: write your own Wallace or
-Dadda tree multiplier and race it against DesignWare's (TUTORIAL.md §4.6).
+> **One exploration, one tag.** Every exploration ends in a commit tagged
+> `expNN` (`exp01`, `exp02`, ..., in the order you make them), pushed to
+> GitHub. The tags are how we see what you tried, and how we reproduce it:
+> **an exploration without a pushed tag does not count.** TUTORIAL.md §2
+> shows how to work with one branch and one tag per exploration.
 
 ## Pipelining, the easy way
 
-The single most useful idea in this lab: to pipeline a block, **put all the
-extra registers at its output (or all at its input) and let the tool retime
-them into the logic.** The RTL stays obviously correct — it is the old
-function, a few cycles later — and the tool finds the cuts and cannot place
-them wrongly. Doing the same by hand is a good comparison, and optional.
-TUTORIAL.md §3 has the RTL; OPTIMIZATION.md §1 has the commands and the
-numbers.
+To pipeline a block, **put all the extra registers at its output (or all at
+its input) and let the tool retime them into the logic.** The RTL stays
+obviously correct, and the tool cannot place a cut wrongly. TUTORIAL.md §3
+has the idea and the RTL; OPTIMIZATION.md §1 has the commands and what they
+did.
 
 ## What stays fixed
 
@@ -150,8 +159,9 @@ inside `dc_shell` are the reference for every option in OPTIMIZATION.md.
 README.md  SETUP.md  TUTORIAL.md  ASSIGNMENT.md  REPORT.md
                                  read them in that order; REPORT.md is what you hand in
 
-rtl/ tb/ model/ data/ accel.core Makefile
+rtl/ tb/ model/ data/ accel.core
                 your Lab 1 design, imported by SETUP.md, then optimised
+Makefile        this template's, with your ACCEL and clock period (SETUP.md)
 sw/             <accel>_regs.h, generated
 figures/        the block diagrams your report refers to -- committed
 runs/           your snapshots of each exploration (gitignored)

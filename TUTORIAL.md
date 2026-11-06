@@ -76,25 +76,32 @@ Fill in REPORT.md §2 before you go on.
 
 ---
 
-## 2. Experiment hygiene: one exploration, one branch, one tag
+## 2. Keeping track of your explorations
 
 You are about to run the flow many times, on many versions of the design. An
-**exploration** is one change, measured through the whole flow, against the
-version it started from — its **parent**. Each one lives on its own branch and
+**exploration** is one change, measured with the flow (rule 2 below), against
+the version it started from — its **parent**. Each one lives on its own branch and
 ends with its own tag, `expNN`, which REPORT.md names.
 
 ### 2.1 Four rules
 
 1. **One change per exploration.** A run that adds retiming *and* changes the
    multiplier tells you nothing about either.
-2. **The whole flow, at a stated period.** Synthesis, place and route,
-   post-layout power, each exploration at the clock period you choose for it.
-   When it differs from the parent's, say how much of the difference is the
-   clock: cycles per item do not depend on it, area and power do.
+2. **The flow, at a stated period.** Each exploration at the clock period you
+   choose for it. One you keep in the final design goes through the whole
+   flow: synthesis, place and route, post-layout power. One you leave out may
+   stop after synthesis and `make power-sim`, unless it changes place and
+   route, and REPORT.md says so; if you decide to keep it later, run the rest
+   then. When the period differs from the parent's, say how much of the
+   difference is the clock: cycles per item do not depend on it, area and
+   power do.
 3. **The tag alone reproduces it.** Everything that decides a number has to
    be in the commit: the RTL, the scripts, **and the make variables**. A
    `PNR_UTIL=0.70` typed on the command line is lost; set the default in the
-   `Makefile` (`PNR_UTIL ?= 0.70`, `CLK_PERIOD ?= 4.0`) and commit it.
+   `Makefile` (`PNR_UTIL ?= 0.70`, `CLK_PERIOD ?= 4.0`) and commit it. A
+   switch of your own for `dc_script.tcl` needs `export` in front
+   (`export RETIME ?= 1`): without it the default never reaches dc_shell, and
+   nothing tells you (SETUP.md §4).
 4. **Keep every result.** Every run overwrites `reports/`.
 
 ### 2.2 Snapshots
@@ -113,7 +120,8 @@ snap() {
   git diff --stat > $d/uncommitted
 }
 
-make synth && make pnr-all && make power-postlayout && snap exp03
+make synth && make pnr-all && make power-postlayout
+snap exp03          # on its own line: it runs even if power-postlayout failed (§5.1)
 grep -E "Critical Path Slack|Cell Area|Sequential Cell Count" runs/exp03/synth/qor.rpt
 ```
 
@@ -138,7 +146,7 @@ A new exploration, here `exp04` with parent `exp01`:
 
 ```bash
 git switch -c exp04-util70 exp01      # a new branch, starting at the parent's tag
-# ... make the change, run the whole flow (rule 2), snap exp04 ...
+# ... make the change, run the flow (rule 2), snap exp04 ...
 git add rtl tb model data accel.core Makefile \
         implementation/design_compiler/scripts implementation/innovus/scripts
 git commit -m "exp04: PNR_UTIL 0.70 (parent exp01)"
@@ -208,10 +216,8 @@ RTL and no thinking about where the cuts go:
 The RTL is trivially correct: it is your Lab 1 function, delayed by a few
 cycles. Retiming preserves that by construction, so the tool cannot cut in
 the wrong place, forget to delay a side signal, or split a carry chain wrongly
-— it never cuts anything you did not give it a register for. On the test
-design in OPTIMIZATION.md, two extra stages at the output plus
-`set_optimize_registers` took a 10 ns multiply-add to **4 ns for 13 % more
-area**.
+— it never cuts anything you did not give it a register for. What it did on
+a test design is in OPTIMIZATION.md §1.3.
 
 ### 3.1 The RTL
 
@@ -245,6 +251,14 @@ end
 module** as the logic they should cut — retiming does not move registers
 across a boundary it is not allowed into.
 
+**If your objective is energy per item, look at this first.** The data
+registers above have no enable: they load on every cycle, `valid` or not, and
+switch whenever `res_d` does. An enable from the valid chain
+(`if (in_valid) res_q[0] <= res_d;`, and `vld_q[i-1]` for stage `i`) lets
+`compile_ultra -gate_clock` put a clock gate in front of them and stop them
+when there is nothing to carry — at the price of less freedom for retiming.
+Which one wins is a measurement, and an exploration of its own.
+
 ### 3.2 The control has to keep the pipeline full
 
 A pipeline only buys throughput if a new item enters **every cycle**. If your
@@ -263,8 +277,8 @@ is unfolding (§4.2) first, then pipelining.
 
 ### 3.3 Find the right number of stages
 
-Sweep `NStages` (0, 1, 2, 3, ...) at synthesis and record, for each, the
-f_max and the area. Each stage adds a row of flip-flops and a cycle of
+Sweep `NStages` (1, 2, 3, ...; the parent is the point with none) at
+synthesis and record, for each, the f_max and the area. Each stage adds a row of flip-flops and a cycle of
 latency; at some point the critical path stops being in the logic — it moves
 to the OBI handshake, the FSM, or a loop — and further stages only add area.
 Take the number at that knee through the whole flow: that is the exploration,
@@ -319,8 +333,9 @@ always_ff @(posedge clk_i) {x_q, y_q, z_q} <= rot(x_m, y_m, z_m, iter_q + 1);
 Half the cycles, a longer path per cycle, twice the step logic. Unfolded all
 the way, the loop disappears: the datapath becomes a straight chain of *N*
 steps — and a straight chain can be pipelined by retiming (§3), up to one item
-per cycle. `lab1-example/`'s CORDIC is folded; its critical loop is in
-OPTIMIZATION.md §1.4.
+per cycle. The CORDIC of
+[ISA-LAB1-EXAMPLE](https://github.com/Integrated-Systems-Architecture/ISA-LAB1-EXAMPLE)
+is folded; its critical loop is in OPTIMIZATION.md §1.4.
 
 ### 4.3 Folding
 
@@ -366,7 +381,7 @@ touching the arithmetic, and §1.3 tells you whether they are worth it.
 
 ### 4.6 Exploration: your own multiplier, as a Wallace or Dadda tree
 
-If your kernel multiplies, here is a proposed exploration: build the
+If your kernel multiplies, one of the possible explorations is to build the
 multiplier yourself and race it against DesignWare. It counts as an
 architectural exploration.
 
@@ -396,10 +411,8 @@ The two classic trees differ only in *when* they reduce:
   number of layers, far fewer half adders.
 
 For 16 × 16 that is 195 full and 15 half adders for Dadda (the textbook
-counts: *N*² − 4*N* + 3 and *N* − 1), against 196 and 78 for Wallace.
-OPTIMIZATION.md §2.7 has what the two did against DesignWare on that size:
-Dadda the fastest when pushed, DesignWare the smallest when relaxed, Wallace
-neither.
+counts: *N*² − 4*N* + 3 and *N* − 1), against 196 and 78 for Wallace: a
+first check for your generator.
 
 How to go about it:
 
@@ -416,10 +429,9 @@ How to go about it:
   Computers, 1973): a few partial products inverted and two constant ones
   added, and the tree is unchanged.
 - **Compare like with like.** Your tree against `a * b` with the tool's choice
-  *and* with the `-mult_arch` options, at a relaxed period and pushed for
-  speed, same corner — the table in OPTIMIZATION.md §2.7 is the format, and
-  REPORT.md §3 has an optional copy of it. Then in your accelerator, through
-  the whole flow: that is the exploration.
+  *and* with the `-mult_arch` options (OPTIMIZATION.md §2.4), at a relaxed
+  period and pushed for speed, same corner. Then in your accelerator: that is
+  the exploration, reported like any other.
 - **Keep it in its own module**, so `area.rpt -hierarchy` shows its area
   separately.
 
@@ -490,9 +502,11 @@ Where to see the effect: core size and density, `04_place.congestion.rpt`,
   period is bigger and draws more power for reasons that have nothing to do
   with the change. For the final design, the synthesis at the **baseline's**
   period separates "a better design" from "a faster clock" (REPORT.md §4.2).
-- **Post-layout, always.** Synthesis is a good place to look for the right
-  setting (a sweep of pipeline stages, of multiplier architectures); the
-  version you report goes through place and route and post-layout power.
+- **Post-layout for what you keep.** Synthesis is a good place to look for
+  the right setting (a sweep of pipeline stages, of multiplier
+  architectures), and enough for an exploration you leave out (§2.1); what
+  you keep, and the final design, go through place and route and post-layout
+  power.
 - **Energy per item, not power.** A design that draws twice the power and
   finishes in a third of the cycles is the better one.
 
@@ -504,7 +518,9 @@ fails — `[TB] N read back as ...`, or `timeout waiting for STATUS.DONE` — wh
 probably fine; the testbench is not fast enough for it.
 
 The Lab 1 testbench applies every input a fraction of the period after the
-ideal clock edge (`ApplDelay`, 20 % in `lab1-example/`). After place and route
+ideal clock edge (`ApplDelay`, 20 % in
+[ISA-LAB1-EXAMPLE](https://github.com/Integrated-Systems-Architecture/ISA-LAB1-EXAMPLE)).
+After place and route
 the flops see that edge later, by the clock tree's insertion delay, and it
 grows with the tree, not with the period:
 
@@ -513,7 +529,7 @@ grep "insertion delay" implementation/innovus/artefacts/reports/05_cts.log | tai
 #   skew_group MY_CLK/func_mode: insertion delay [min=0.481, max=1.100, avg=0.830, ...
 ```
 
-That is the CORDIC of `lab1-example/` at 4 ns: 20 % of 4 ns is 0.8 ns, the
+That is the CORDIC of ISA-LAB1-EXAMPLE at 4 ns: 20 % of 4 ns is 0.8 ns, the
 latest flop sees the edge at 1.1 ns, and it captures the testbench's *next*
 value — a hold violation that exists only in the testbench. The OBI response
 path, which goes through the testbench's memory model and back within the
@@ -530,7 +546,7 @@ What to do:
    ```
 
    `TEST PASSED` there means the routed netlist computes the right results.
-   Start at 10 000 ps, where `lab1-example/` passes, and go down while it
+   Start at 10 000 ps, where ISA-LAB1-EXAMPLE passes, and go down while it
    still passes if you want a closer point.
 2. **Report the power at that clock, and say so.** Dynamic energy per item is
    set by what switches per item, not by how fast, so it carries over to the
@@ -579,7 +595,7 @@ git switch -c expNN-<what> <parent tag>      # branch from the parent
 make sim && make questa                      # still TEST PASSED, twice
 make synth                                   # CLK_PERIOD, PNR_UTIL, ... as Makefile defaults
 make power-sim                               # the netlist still passes
-make pnr-all && make power-postlayout
+make pnr-all && make power-postlayout        # if you keep it, or it changes PnR: §2.1
 make power-postlayout PWR_CLK_PS=10000       # if it fails at a short period: §5.1
 snap expNN                                   # §2.2
 git commit ... && git tag expNN && git push origin expNN

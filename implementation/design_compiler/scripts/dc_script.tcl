@@ -202,8 +202,9 @@ report_clocks > ${REPORT_DIR}/clocks.rpt
 # compile -gate_clock
 #
 # -gate_clock lets the tool insert clock gates on enable-driven registers. In
-# this technology it uses sg13g2_lgcp_1, the library's integrated clock
-# gating cell (a posedge latch plus an AND, as one characterised cell).
+# this technology it uses sg13g2_slgcp_1, the library's integrated clock
+# gating cell with a scan enable (a posedge latch plus an AND, as one
+# characterised cell).
 compile_ultra -gate_clock
 
 # ========================================================================

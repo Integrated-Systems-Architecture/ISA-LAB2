@@ -23,7 +23,7 @@ analyze -f sverilog -lib WORK ${VENDOR}/common_cells/src/fifo_v3.sv
 analyze -f sverilog -lib WORK ${VENDOR}/common_cells/src/credit_counter.sv
 
 # The technology cells. NOT the behavioural ones from tech_cells_generic:
-# for synthesis, tc_clk_gating is the wrapper around sg13g2_lgcp_1, the
+# for synthesis, tc_clk_gating is the wrapper around sg13g2_slgcp_1, the
 # library's integrated clock gating cell. Same module name, same ports, real
 # cell inside. Synthesising the behavioural model instead would build a latch
 # out of standard cells and AND it with the clock -- see the README.
